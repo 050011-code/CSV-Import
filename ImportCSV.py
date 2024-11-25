@@ -413,10 +413,13 @@ def importCSV(
 ):
     # list<tuple3<float>>
     vertices = []
+    
     # list<tuple3<int>>
     faces = []
+
     # list<list<tuple2<int>>>
     uvs = []
+
     for _ in range(len(uvMapsIndicies)):
         uvs.append([])
     # list<list<tuple3<float>>>
