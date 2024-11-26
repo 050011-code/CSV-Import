@@ -1,6 +1,7 @@
 import bpy
 import bmesh
 import csv
+import os
 import mathutils
 from bpy_extras.io_utils import axis_conversion, orientation_helper
 from bpy.props import (
@@ -12,7 +13,6 @@ from bpy.props import (
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty, CollectionProperty
 from bpy.types import Operator
-import os
 
 
 bl_info = {
@@ -75,6 +75,16 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(2, 3, 4),
+    )
+    autoPosition: bpy.props.BoolProperty(
+        name="Automatically find position",
+        description="Automatically find vertex positions in the file and use that",
+        default=True,
+    )
+    autoUVs: bpy.props.BoolProperty(
+        name="Automatically find UVs",
+        description="Automatically find UV positions in the file and use that",
+        default=True,
     )
 
 ########################################################################
@@ -325,9 +335,41 @@ class Import_CSV(bpy.types.Operator):
             ).to_4x4()
 
             # Only parse what it shown in the importer UI
-            uvArgs = [self.uvIndex0, self.uvIndex1, self.uvIndex2, self.uvIndex3, self.uvIndex4]
             color3Args = [self.color3Index0, self.color3Index1, self.color3Index2, self.color3Index3, self.color3Index4]
             colorArgs = [self.colorIndex0, self.colorIndex1, self.colorIndex2, self.colorIndex3, self.colorIndex4]
+
+            if self.autoPosition:
+                ## read csv first row for position
+                
+                with open(filepath) as f:
+                    reader = csv.reader(f)
+                    for line in reader:
+                        for rowIndex, rowValue in enumerate(line):
+                            if "POSITION" in rowValue:
+                                self.positionIndex = (rowIndex ,rowIndex + 1 ,rowIndex + 2)
+                                break
+                
+
+            if self.autoUVs:
+                self.uvCount = 0
+                uvArgs = []
+                with open(filepath) as f:
+                    reader = csv.reader(f)
+                    for line in reader:
+                        for rowIndex, rowValue in enumerate(line):
+                            if "TEXCOORD" in rowValue: # If the row has the word for UV maps
+                                if uvArgs != []: # loop doesn't exist if the list is blank 
+                                    if len(uvArgs[-1]) == 2: # I don't wan't to do a comparison for higher values cus it will be broken anyway
+                                        uvArgs.append([rowIndex])
+                                    else:
+                                        uvArgs[-1].append(rowIndex) # If the inner list only has one value, complete it. This of course is assuming the csv export of the uvmaps is one after the other.
+                                        self.uvCount += 1
+                                else:
+                                    uvArgs.append([rowIndex])
+                        break
+
+            else:
+                uvArgs = [self.uvIndex0, self.uvIndex1, self.uvIndex2, self.uvIndex3, self.uvIndex4]
 
             verts, faces, uvs, color3s, colors = importCSV(
                 filepath,
@@ -394,15 +436,23 @@ class Import_CSV(bpy.types.Operator):
         row3.prop(self, "skipFirstRow")
 
         indexBox = self.layout.box()
-        indexBoxRow = indexBox.row()
-        indexBoxRow.column().prop(self, "positionIndex")
+        indexBoxRow0 = indexBox.row()
+        indexBoxRow0.column().prop(self, "autoPosition")
+        
+        
+        if self.autoPosition == False:
+            indexBoxRow = indexBox.row()
+            indexBoxRow.column().prop(self, "positionIndex")
 
         uvBox = self.layout.box()
-        uvBox.prop(self, "uvCount")
-        for i in range(self.uvCount):
-            uvBox.prop(self, f"uvIndex{i}")
-            if self.showNormalize:
-                uvBox.prop(self, f"uvNormalize{i}")
+        uvBoxRow0 = uvBox.row()
+        uvBoxRow0.prop(self, "autoUVs")
+        if self.autoUVs == False:
+            uvBox.prop(self, "uvCount")
+            for i in range(self.uvCount):
+                uvBox.prop(self, f"uvIndex{i}")
+                if self.showNormalize:
+                    uvBox.prop(self, f"uvNormalize{i}")
 
         color3Box = self.layout.box()
         color3Box.prop(self, "color3Count")
