@@ -1,13 +1,13 @@
 ## Added in this fork
 - Multiple file import:
-- - You can now shift select and import multiple csv files at once
-- Autmatic detection of certain parameters
-- - Vertex position is able to be auto detectable (Developed for NSight exports)
-- - Same as with UV maps
+ - You can now shift select and import multiple csv files at once
+ Autmatic detection of certain parameters
+ - Vertex position is able to be auto detectable (Developed for NSight exports)
+ - Same as with UV maps
 
 # CSV Importer
 
-While created for Renderdoc .csv files, this is intended to be a general-purpose .csv mesh importer. It will assume vertex indicies as the row number, and crate faces based on that. All options on the import panel have descriptive tooltips.
+While created for Renderdoc .csv files (and now tuned for NSight exports), this is intended to be a general-purpose .csv mesh importer. It will assume vertex indicies as the row number, and create faces based on that. All options on the import panel have descriptive tooltips.
 
 To install, download the latest release and install it as an addon
 
