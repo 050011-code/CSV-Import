@@ -9,11 +9,15 @@ from bpy.props import (
     IntVectorProperty,
     StringProperty,
 )
+from bpy_extras.io_utils import ImportHelper
+from bpy.props import StringProperty, BoolProperty, EnumProperty, CollectionProperty
+from bpy.types import Operator
+import os
 
 
 bl_info = {
     "name": "CSV Importer",
-    "author": "Puxtril",
+    "author": "Puxtril + Ethnogeny",
     "version": (1, 3, 0),
     "blender": (2, 80, 0),
     "location": "File > Import-Export",
@@ -296,108 +300,123 @@ class Import_CSV(bpy.types.Operator):
         default=1
     )
 
+    ###########################################
+    # necessary to support multi-file import
+    files: CollectionProperty(
+        type=bpy.types.OperatorFileListElement,
+        options={'HIDDEN', 'SKIP_SAVE'},
+    )
+
+    directory: StringProperty(
+        subtype='DIR_PATH',
+    )
+    ###########################################
+
 ########################################################################
 # Operator Functions
 
     def execute(self, context):
-        transformMatrix = axis_conversion(
-            from_forward=self.axis_forward,
-            from_up=self.axis_up,
-        ).to_4x4()
+        for current_file in self.files:
+            filepath = os.path.join(self.directory, current_file.name)
 
-        # Only parse what it shown in the importer UI
-        uvArgs = [self.uvIndex0, self.uvIndex1, self.uvIndex2, self.uvIndex3, self.uvIndex4]
-        color3Args = [self.color3Index0, self.color3Index1, self.color3Index2, self.color3Index3, self.color3Index4]
-        colorArgs = [self.colorIndex0, self.colorIndex1, self.colorIndex2, self.colorIndex3, self.colorIndex4]
+            transformMatrix = axis_conversion(
+                from_forward=self.axis_forward,
+                from_up=self.axis_up,
+            ).to_4x4()
 
-        verts, faces, uvs, color3s, colors = importCSV(
-            self.filepath,
-            self.positionIndex,
-            uvArgs[: self.uvCount],
-            color3Args[: self.color3Count],
-            colorArgs[: self.colorCount],
-            self.mirrorVertX,
-            self.mirrorUV,
-            self.vertexOrder,
-            self.skipFirstRow,
-        )
+            # Only parse what it shown in the importer UI
+            uvArgs = [self.uvIndex0, self.uvIndex1, self.uvIndex2, self.uvIndex3, self.uvIndex4]
+            color3Args = [self.color3Index0, self.color3Index1, self.color3Index2, self.color3Index3, self.color3Index4]
+            colorArgs = [self.colorIndex0, self.colorIndex1, self.colorIndex2, self.colorIndex3, self.colorIndex4]
 
-        # Don't do anything if not shown
-        if self.showNormalize:
-            uvsNormalizeArgs = [self.uvNormalize0, self.uvNormalize1, self.uvNormalize2, self.uvNormalize3, self.uvNormalize4]
-            color3sNormalizeArgs = [self.color3Normalize0, self.color3Normalize1, self.color3Normalize2, self.color3Normalize3, self.color3Normalize4]
-            colorsNormalizeArgs = [self.colorNormalize0, self.colorNormalize1, self.colorNormalize2, self.colorNormalize3, self.colorNormalize4]
-        else:
-            uvsNormalizeArgs = [1, 1, 1, 1, 1]
-            color3sNormalizeArgs = [1, 1, 1, 1, 1]
-            colorsNormalizeArgs = [1, 1, 1, 1, 1]
+            verts, faces, uvs, color3s, colors = importCSV(
+                filepath,
+                self.positionIndex,
+                uvArgs[: self.uvCount],
+                color3Args[: self.color3Count],
+                colorArgs[: self.colorCount],
+                self.mirrorVertX,
+                self.mirrorUV,
+                self.vertexOrder,
+                self.skipFirstRow,
+            )
 
-        meshObj = createMesh(
-            verts,
-            faces,
-            uvs,
-            uvsNormalizeArgs[: self.uvCount],
-            color3s,
-            color3sNormalizeArgs[: self.color3Count],
-            colors,
-            colorsNormalizeArgs[: self.colorCount],
-            transformMatrix
-        )
-
-        if self.cleanMesh:
-            tempBmesh = bmesh.new()
-            tempBmesh.from_mesh(meshObj.data)
-            bmesh.ops.remove_doubles(tempBmesh, verts=tempBmesh.verts, dist=0.0001)
-            for face in tempBmesh.faces:
-                face.smooth = True
-            tempBmesh.to_mesh(meshObj.data)
-            tempBmesh.clear()
-            meshObj.data.update()
-
-        return {"FINISHED"}
-
-    def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {"RUNNING_MODAL"}
-
-    def draw(self, context):
-        generalBox = self.layout.box()
-        generalBox.prop(self, "axis_forward")
-        generalBox.prop(self, "axis_up")
-        row1 = generalBox.row()
-        row1.prop(self, "mirrorVertX")
-        row1.prop(self, "mirrorUV")
-        row2 = generalBox.row()
-        row2.prop(self, "cleanMesh")
-        row2.prop(self, "vertexOrder")
-        row3 = generalBox.row()
-        row3.prop(self, "showNormalize")
-        row3.prop(self, "skipFirstRow")
-
-        indexBox = self.layout.box()
-        indexBoxRow = indexBox.row()
-        indexBoxRow.column().prop(self, "positionIndex")
-
-        uvBox = self.layout.box()
-        uvBox.prop(self, "uvCount")
-        for i in range(self.uvCount):
-            uvBox.prop(self, f"uvIndex{i}")
+            # Don't do anything if not shown
             if self.showNormalize:
-                uvBox.prop(self, f"uvNormalize{i}")
+                uvsNormalizeArgs = [self.uvNormalize0, self.uvNormalize1, self.uvNormalize2, self.uvNormalize3, self.uvNormalize4]
+                color3sNormalizeArgs = [self.color3Normalize0, self.color3Normalize1, self.color3Normalize2, self.color3Normalize3, self.color3Normalize4]
+                colorsNormalizeArgs = [self.colorNormalize0, self.colorNormalize1, self.colorNormalize2, self.colorNormalize3, self.colorNormalize4]
+            else:
+                uvsNormalizeArgs = [1, 1, 1, 1, 1]
+                color3sNormalizeArgs = [1, 1, 1, 1, 1]
+                colorsNormalizeArgs = [1, 1, 1, 1, 1]
 
-        color3Box = self.layout.box()
-        color3Box.prop(self, "color3Count")
-        for i in range(self.color3Count):
-            color3Box.prop(self, f"color3Index{i}")
-            if self.showNormalize:
-                color3Box.prop(self, f"color3Normalize{i}")
+            meshObj = createMesh(
+                verts,
+                faces,
+                uvs,
+                uvsNormalizeArgs[: self.uvCount],
+                color3s,
+                color3sNormalizeArgs[: self.color3Count],
+                colors,
+                colorsNormalizeArgs[: self.colorCount],
+                transformMatrix
+            )
 
-        colorBox = self.layout.box()
-        colorBox.prop(self, "colorCount")
-        for i in range(self.colorCount):
-            colorBox.prop(self, f"colorIndex{i}")
-            if self.showNormalize:
-                colorBox.prop(self, f"colorNormalize{i}")
+            if self.cleanMesh:
+                tempBmesh = bmesh.new()
+                tempBmesh.from_mesh(meshObj.data)
+                bmesh.ops.remove_doubles(tempBmesh, verts=tempBmesh.verts, dist=0.0001)
+                for face in tempBmesh.faces:
+                    face.smooth = True
+                tempBmesh.to_mesh(meshObj.data)
+                tempBmesh.clear()
+                meshObj.data.update()
+
+            return {"FINISHED"}
+
+        def invoke(self, context, event):
+            context.window_manager.fileselect_add(self)
+            return {"RUNNING_MODAL"}
+
+        def draw(self, context):
+            generalBox = self.layout.box()
+            generalBox.prop(self, "axis_forward")
+            generalBox.prop(self, "axis_up")
+            row1 = generalBox.row()
+            row1.prop(self, "mirrorVertX")
+            row1.prop(self, "mirrorUV")
+            row2 = generalBox.row()
+            row2.prop(self, "cleanMesh")
+            row2.prop(self, "vertexOrder")
+            row3 = generalBox.row()
+            row3.prop(self, "showNormalize")
+            row3.prop(self, "skipFirstRow")
+
+            indexBox = self.layout.box()
+            indexBoxRow = indexBox.row()
+            indexBoxRow.column().prop(self, "positionIndex")
+
+            uvBox = self.layout.box()
+            uvBox.prop(self, "uvCount")
+            for i in range(self.uvCount):
+                uvBox.prop(self, f"uvIndex{i}")
+                if self.showNormalize:
+                    uvBox.prop(self, f"uvNormalize{i}")
+
+            color3Box = self.layout.box()
+            color3Box.prop(self, "color3Count")
+            for i in range(self.color3Count):
+                color3Box.prop(self, f"color3Index{i}")
+                if self.showNormalize:
+                    color3Box.prop(self, f"color3Normalize{i}")
+
+            colorBox = self.layout.box()
+            colorBox.prop(self, "colorCount")
+            for i in range(self.colorCount):
+                colorBox.prop(self, f"colorIndex{i}")
+                if self.showNormalize:
+                    colorBox.prop(self, f"colorNormalize{i}")
 
 
 def importCSV(
