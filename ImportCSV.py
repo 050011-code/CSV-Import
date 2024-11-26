@@ -17,8 +17,8 @@ from bpy.types import Operator
 
 bl_info = {
     "name": "CSV Importer",
-    "author": "Puxtril + Ethnogeny",
-    "version": (1, 3, 0),
+    "author": "Puxtril, Ethnogeny",
+    "version": (1, 4, 0),
     "blender": (2, 80, 0),
     "location": "File > Import-Export",
     "description": "Import CSV mesh dump",
@@ -26,7 +26,7 @@ bl_info = {
 }
 
 
-@orientation_helper(axis_forward="Z", axis_up="Y")
+@orientation_helper(axis_forward="Y", axis_up="Z")
 class Import_CSV(bpy.types.Operator):
     """Imports .csv meshes"""
     bl_idname = "object.import_csv"
@@ -358,6 +358,7 @@ class Import_CSV(bpy.types.Operator):
                     for line in reader:
                         for rowIndex, rowValue in enumerate(line):
                             if "TEXCOORD" in rowValue: # If the row has the word for UV maps
+                                if self.uvCount > 5: break # The CreateMesh function only allows up to 5 UVs
                                 if uvArgs != []: # loop doesn't exist if the list is blank 
                                     if len(uvArgs[-1]) == 2: # I don't wan't to do a comparison for higher values cus it will be broken anyway
                                         uvArgs.append([rowIndex])
