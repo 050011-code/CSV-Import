@@ -1,9 +1,9 @@
-## Added in this fork
+### Added in this fork
 - Multiple file import:
- - You can now shift select and import multiple csv files at once
- Autmatic detection of certain parameters
- - Vertex position is able to be auto detectable (Developed for NSight exports)
- - Same as with UV maps
+    - You can now shift select and import multiple csv files at once
+- Automatic detection of certain parameters
+    - Vertex position is able to be auto detectable (Developed for NSight exports)
+    - Same as with UV maps
 
 # CSV Importer
 
