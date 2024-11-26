@@ -373,50 +373,50 @@ class Import_CSV(bpy.types.Operator):
                 tempBmesh.clear()
                 meshObj.data.update()
 
-            return {"FINISHED"}
+        return {'FINISHED'}
 
-        def invoke(self, context, event):
-            context.window_manager.fileselect_add(self)
-            return {"RUNNING_MODAL"}
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
 
-        def draw(self, context):
-            generalBox = self.layout.box()
-            generalBox.prop(self, "axis_forward")
-            generalBox.prop(self, "axis_up")
-            row1 = generalBox.row()
-            row1.prop(self, "mirrorVertX")
-            row1.prop(self, "mirrorUV")
-            row2 = generalBox.row()
-            row2.prop(self, "cleanMesh")
-            row2.prop(self, "vertexOrder")
-            row3 = generalBox.row()
-            row3.prop(self, "showNormalize")
-            row3.prop(self, "skipFirstRow")
+    def draw(self, context):
+        generalBox = self.layout.box()
+        generalBox.prop(self, "axis_forward")
+        generalBox.prop(self, "axis_up")
+        row1 = generalBox.row()
+        row1.prop(self, "mirrorVertX")
+        row1.prop(self, "mirrorUV")
+        row2 = generalBox.row()
+        row2.prop(self, "cleanMesh")
+        row2.prop(self, "vertexOrder")
+        row3 = generalBox.row()
+        row3.prop(self, "showNormalize")
+        row3.prop(self, "skipFirstRow")
 
-            indexBox = self.layout.box()
-            indexBoxRow = indexBox.row()
-            indexBoxRow.column().prop(self, "positionIndex")
+        indexBox = self.layout.box()
+        indexBoxRow = indexBox.row()
+        indexBoxRow.column().prop(self, "positionIndex")
 
-            uvBox = self.layout.box()
-            uvBox.prop(self, "uvCount")
-            for i in range(self.uvCount):
-                uvBox.prop(self, f"uvIndex{i}")
-                if self.showNormalize:
-                    uvBox.prop(self, f"uvNormalize{i}")
+        uvBox = self.layout.box()
+        uvBox.prop(self, "uvCount")
+        for i in range(self.uvCount):
+            uvBox.prop(self, f"uvIndex{i}")
+            if self.showNormalize:
+                uvBox.prop(self, f"uvNormalize{i}")
 
-            color3Box = self.layout.box()
-            color3Box.prop(self, "color3Count")
-            for i in range(self.color3Count):
-                color3Box.prop(self, f"color3Index{i}")
-                if self.showNormalize:
-                    color3Box.prop(self, f"color3Normalize{i}")
+        color3Box = self.layout.box()
+        color3Box.prop(self, "color3Count")
+        for i in range(self.color3Count):
+            color3Box.prop(self, f"color3Index{i}")
+            if self.showNormalize:
+                color3Box.prop(self, f"color3Normalize{i}")
 
-            colorBox = self.layout.box()
-            colorBox.prop(self, "colorCount")
-            for i in range(self.colorCount):
-                colorBox.prop(self, f"colorIndex{i}")
-                if self.showNormalize:
-                    colorBox.prop(self, f"colorNormalize{i}")
+        colorBox = self.layout.box()
+        colorBox.prop(self, "colorCount")
+        for i in range(self.colorCount):
+            colorBox.prop(self, f"colorIndex{i}")
+            if self.showNormalize:
+                colorBox.prop(self, f"colorNormalize{i}")
 
 
 def importCSV(
