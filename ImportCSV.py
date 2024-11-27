@@ -403,7 +403,8 @@ class Import_CSV(bpy.types.Operator):
                 color3sNormalizeArgs[: self.color3Count],
                 colors,
                 colorsNormalizeArgs[: self.colorCount],
-                transformMatrix
+                transformMatrix,
+                current_file
             )
 
             if self.cleanMesh:
@@ -566,7 +567,8 @@ def createMesh(
     color3sNormalize: list,
     colors: list,
     colorsNormalize: list,
-    transformMatrix
+    transformMatrix,
+    current_file
 ):
     mesh = bpy.data.meshes.new("name")
     mesh.from_pydata(vertices, [], faces)
@@ -595,7 +597,7 @@ def createMesh(
             curColNorm = curCol / colorsNormalize[colorIndex]
             colorLayer.data[vertexIndex].color = [curColNorm, curColNorm, curColNorm, 0]
 
-    obj = bpy.data.objects.new("name", mesh)
+    obj = bpy.data.objects.new(current_file.name.split(".")[0], mesh)
     obj.data.transform(transformMatrix)
     obj.matrix_world = mathutils.Matrix()
     bpy.context.scene.collection.objects.link(obj)
