@@ -4,6 +4,7 @@
 - Automatic detection of certain parameters
     - Vertex position is able to be auto detectable (Developed for NSight exports)
     - Same as with UV maps
+- Minuscule other changes that don't really affect much
 
 # CSV Importer
 
