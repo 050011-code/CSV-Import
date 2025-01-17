@@ -570,7 +570,7 @@ def createMesh(
     transformMatrix,
     current_file
 ):
-    mesh = bpy.data.meshes.new("name")
+    mesh = bpy.data.meshes.new(current_file.name.split(".")[0])
     mesh.from_pydata(vertices, [], faces)
 
     # UV Maps
