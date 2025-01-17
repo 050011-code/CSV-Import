@@ -1,18 +1,20 @@
-import bpy
-import bmesh
+import bpy # type: ignore
+import bmesh # type: ignore
 import csv
 import os
-import mathutils
-from bpy_extras.io_utils import axis_conversion, orientation_helper
-from bpy.props import (
+import mathutils # type: ignore
+from mathutils import Vector, Quaternion # type: ignore
+from bpy_extras.io_utils import axis_conversion, orientation_helper # type: ignore
+from bpy.props import ( # type: ignore
     BoolProperty,
     IntProperty,
     IntVectorProperty,
     StringProperty,
 )
-from bpy_extras.io_utils import ImportHelper
-from bpy.props import StringProperty, BoolProperty, EnumProperty, CollectionProperty
-from bpy.types import Operator
+from bpy_extras.io_utils import ImportHelper # type: ignore
+from bpy.props import StringProperty, BoolProperty, EnumProperty, CollectionProperty # type: ignore
+from bpy.types import Operator # type: ignore
+import numpy as np
 
 
 bl_info = {
@@ -26,14 +28,14 @@ bl_info = {
 }
 
 
-@orientation_helper(axis_forward="Y", axis_up="Z")
+@orientation_helper(axis_forward="-Y", axis_up="Z")
 class Import_CSV(bpy.types.Operator):
     """Imports .csv meshes"""
     bl_idname = "object.import_csv"
     bl_label = "Import csv"
     bl_options = {"PRESET", "UNDO"}
-    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
-    filter_glob: StringProperty(default="*.csv", options={"HIDDEN"})
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH") # type: ignore
+    filter_glob: StringProperty(default="*.csv", options={"HIDDEN"}) # type: ignore
 
 ########################################################################
 # General Properties
@@ -42,32 +44,32 @@ class Import_CSV(bpy.types.Operator):
         name="Mirror X",
         description="Mirror all the vertices across X axis",
         default=True,
-    )
+    ) # type: ignore
     vertexOrder: bpy.props.BoolProperty(
         name="Flip Winding",
         description="Reorder vertices in counter-clockwise order",
         default=False,
-    )
+    ) # type: ignore
     mirrorUV: bpy.props.BoolProperty(
         name="Mirror V",
         description="Flip UV Maps vertically",
         default=True,
-    )
+    ) # type: ignore
     cleanMesh: bpy.props.BoolProperty(
         name="Clean Mesh",
         description="Remove doubles and enable smooth shading",
         default=True,
-    )
+    ) # type: ignore
     showNormalize: bpy.props.BoolProperty(
         name="Show Normalize",
         description="Show options to normalize input values",
         default=False,
-    )
+    ) # type: ignore
     skipFirstRow: bpy.props.BoolProperty(
         name="Skip Title",
         description="Skip first row of the .csv file",
         default=True,
-    )
+    ) # type: ignore
     positionIndex: bpy.props.IntVectorProperty(
         name="Positions",
         description="Column numbers (0 indexed) of vertex positions",
@@ -75,17 +77,17 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(2, 3, 4),
-    )
+    ) # type: ignore
     autoPosition: bpy.props.BoolProperty(
         name="Automatically find position",
         description="Automatically find vertex positions in the file and use that",
         default=True,
-    )
+    ) # type: ignore
     autoUVs: bpy.props.BoolProperty(
         name="Automatically find UVs",
         description="Automatically find UV positions in the file and use that",
         default=True,
-    )
+    ) # type: ignore
 
 ########################################################################
 # UV properties
@@ -96,7 +98,7 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         max=5,
         default=1,
-    )
+    ) # type: ignore
     uvIndex0: bpy.props.IntVectorProperty(
         name="UV 1",
         description="Column numbers (0 indexed) of UV map",
@@ -104,12 +106,12 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(14, 15),
-    )
+    ) # type: ignore
     uvNormalize0: bpy.props.IntProperty(
         name="Normalize UV 1",
         description="Divide inputs by this number",
         default=1
-    )
+    ) # type: ignore
     uvIndex1: bpy.props.IntVectorProperty(
         name="UV 2",
         description="Column numbers (0 indexed) of UV map",
@@ -117,12 +119,12 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(0, 0),
-    )
+    ) # type: ignore
     uvNormalize1: bpy.props.IntProperty(
         name="Normalize UV 2",
         description="Divide inputs by this number",
         default=1
-    )
+    ) # type: ignore
     uvIndex2: bpy.props.IntVectorProperty(
         name="UV 3",
         description="Column numbers (0 indexed) of UV map",
@@ -130,12 +132,12 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(0, 0),
-    )
+    ) # type: ignore
     uvNormalize2: bpy.props.IntProperty(
         name="Normalize UV 3",
         description="Divide inputs by this number",
         default=1
-    )
+    ) # type: ignore
     uvIndex3: bpy.props.IntVectorProperty(
         name="UV 4",
         description="Column numbers (0 indexed) of UV map",
@@ -143,12 +145,12 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(0, 0),
-    )
+    ) # type: ignore
     uvNormalize3: bpy.props.IntProperty(
         name="Normalize UV 4",
         description="Divide inputs by this number",
         default=1
-    )
+    ) # type: ignore
     uvIndex4: bpy.props.IntVectorProperty(
         name="UV 5",
         description="Column numbers (0 indexed) of UV map",
@@ -156,12 +158,12 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(0, 0),
-    )
+    ) # type: ignore
     uvNormalize4: bpy.props.IntProperty(
         name="Normalize UV 5",
         description="Divide inputs by this number",
         default=1
-    )
+    ) # type: ignore
 
 ########################################################################
 # Vertex Color3 Properties
@@ -172,7 +174,7 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         max=5,
         default=0,
-    )
+    ) # type: ignore
     color3Index0: bpy.props.IntVectorProperty(
         name="Vertex Color RGB 1",
         description="Column numbers (0 indexed) of Vertex Colors (RGB)",
@@ -180,12 +182,12 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(10, 11, 12),
-    )
+    ) # type: ignore
     color3Normalize0: bpy.props.IntProperty(
         name="Normalize Color RGB 1",
         description="Divide inputs by this number",
         default=1
-    )
+    ) # type: ignore
     color3Index1: bpy.props.IntVectorProperty(
         name="Vertex Color RGB 2",
         description="Column numbers (0 indexed) of Vertex Colors (RGB)",
@@ -193,12 +195,12 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(0, 0, 0),
-    )
+    ) # type: ignore
     color3Normalize1: bpy.props.IntProperty(
         name="Normalize Color RGB 2",
         description="Divide inputs by this number",
         default=1
-    )
+    ) # type: ignore
     color3Index2: bpy.props.IntVectorProperty(
         name="Vertex Color RGB 3",
         description="Column numbers (0 indexed) of Vertex Colors (RGB)",
@@ -206,12 +208,12 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(0, 0, 0),
-    )
+    ) # type: ignore
     color3Normalize2: bpy.props.IntProperty(
         name="Normalize Colors RGB 3",
         description="Divide inputs by this number",
         default=1
-    )
+    ) # type: ignore
     color3Index3: bpy.props.IntVectorProperty(
         name="Vertex Color RGB 4",
         description="Column numbers (0 indexed) of Vertex Colors (RGB)",
@@ -219,12 +221,12 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(0, 0, 0),
-    )
+    ) # type: ignore
     color3Normalize3: bpy.props.IntProperty(
         name="Normalize Colors RGB 4",
         description="Divide inputs by this number",
         default=1
-    )
+    ) # type: ignore
     color3Index4: bpy.props.IntVectorProperty(
         name="Vertex Color RGB 5",
         description="Column numbers (0 indexed) of Vertex Colors (RGB)",
@@ -232,12 +234,12 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         soft_max=20,
         default=(0, 0, 0),
-    )
+    ) # type: ignore
     color3Normalize4: bpy.props.IntProperty(
         name="Normalize Colors RGB 5",
         description="Divide inputs by this number",
         default=1
-    )
+    ) # type: ignore
 
 ########################################################################
 # Vertex Color Properties
@@ -248,78 +250,78 @@ class Import_CSV(bpy.types.Operator):
         min=0,
         max=5,
         default=0,
-    )
+    ) # type: ignore
     colorIndex0: bpy.props.IntProperty(
         name="Vertex Color Alpha 1",
         description="Column number (0 indexed) of Vertex Color (Alpha)",
         min=0,
         soft_max=20,
         default=0,
-    )
+    ) # type: ignore
     colorNormalize0: bpy.props.IntProperty(
         name="Normalize Color Alpha 1",
         description="Divide input by this number",
         default=1
-    )
+    ) # type: ignore
     colorIndex1: bpy.props.IntProperty(
         name="Vertex Color Alpha 2",
         description="Column number (0 indexed) of Vertex Color (Alpha)",
         min=0,
         soft_max=20,
         default=0,
-    )
+    ) # type: ignore
     colorNormalize1: bpy.props.IntProperty(
         name="Normalize Color Alpha 2",
         description="Divide input by this number",
         default=1
-    )
+    ) # type: ignore
     colorIndex2: bpy.props.IntProperty(
         name="Vertex Color Alpha 3",
         description="Column number (0 indexed) of Vertex Color (Alpha)",
         min=0,
         soft_max=20,
         default=0,
-    )
+    ) # type: ignore
     colorNormalize2: bpy.props.IntProperty(
         name="Normalize Color Alpha 3",
         description="Divide input by this number",
         default=1
-    )
+    ) # type: ignore
     colorIndex3: bpy.props.IntProperty(
         name="Vertex Color Alpha 4",
         description="Column number (0 indexed) of Vertex Color (Alpha)",
         min=0,
         soft_max=20,
         default=0,
-    )
+    ) # type: ignore
     colorNormalize3: bpy.props.IntProperty(
         name="Normalize Color Alpha 4",
         description="Divide input by this number",
         default=1
-    )
+    ) # type: ignore
     colorIndex4: bpy.props.IntProperty(
         name="Vertex Color Alpha 5",
         description="Column number (0 indexed) of Vertex Color (Alpha)",
         min=0,
         soft_max=20,
         default=0,
-    )
+    ) # type: ignore
     colorNormalize4: bpy.props.IntProperty(
         name="Normalize Color Alpha 5",
         description="Divide input by this number",
         default=1
-    )
+    ) # type: ignore
 
     ###########################################
     # necessary to support multi-file import
     files: CollectionProperty(
         type=bpy.types.OperatorFileListElement,
         options={'HIDDEN', 'SKIP_SAVE'},
-    )
+    ) # type: ignore
 
     directory: StringProperty(
         subtype='DIR_PATH',
-    )
+    ) # type: ignore
     ###########################################
 
 ########################################################################
@@ -346,7 +348,7 @@ class Import_CSV(bpy.types.Operator):
                     for line in reader:
                         for rowIndex, rowValue in enumerate(line):
                             if "POSITION" in rowValue:
-                                self.positionIndex = (rowIndex ,rowIndex + 1 ,rowIndex + 2)
+                                self.positionIndex = (rowIndex, rowIndex + 1 ,rowIndex + 2)
                                 break
                 
 
@@ -358,7 +360,7 @@ class Import_CSV(bpy.types.Operator):
                     for line in reader:
                         for rowIndex, rowValue in enumerate(line):
                             if "TEXCOORD" in rowValue: # If the row has the word for UV maps
-                                if self.uvCount > 5: break # The CreateMesh function only allows up to 5 UVs
+                                if self.uvCount > 5: break # The OG code had 5 UVs, i don't see a need to exceed that, it will handle more anyway.
                                 if uvArgs != []: # loop doesn't exist if the list is blank 
                                     if len(uvArgs[-1]) == 2: # I don't wan't to do a comparison for higher values cus it will be broken anyway
                                         uvArgs.append([rowIndex])
@@ -404,8 +406,11 @@ class Import_CSV(bpy.types.Operator):
                 colors,
                 colorsNormalizeArgs[: self.colorCount],
                 transformMatrix,
-                current_file
+                current_file,
+                filepath
             )
+
+            meshObj = customSplitNormals(filepath, meshObj,transformMatrix, verts)
 
             if self.cleanMesh:
                 tempBmesh = bmesh.new()
@@ -415,8 +420,10 @@ class Import_CSV(bpy.types.Operator):
                     face.smooth = True
                 tempBmesh.to_mesh(meshObj.data)
                 tempBmesh.clear()
-                meshObj.data.update()
 
+                meshObj.data.use_auto_smooth = True
+                meshObj.data.update()
+            
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -516,9 +523,9 @@ def importCSV(
 
             # Position
             curPos = (
-                readFloatFromArray(row, posIndicies[0]) * x_mod,
-                readFloatFromArray(row, posIndicies[1]),
-                readFloatFromArray(row, posIndicies[2])
+                readFloatFromArray(row, posIndicies[0]) * x_mod / 10, # divide by 4 is changing the size, nothing else
+                readFloatFromArray(row, posIndicies[1]) / 10,
+                readFloatFromArray(row, posIndicies[2]) / 10
             )
             vertices.append(curPos)
 
@@ -568,10 +575,13 @@ def createMesh(
     colors: list,
     colorsNormalize: list,
     transformMatrix,
-    current_file
+    current_file,
+    filepath
 ):
-    mesh = bpy.data.meshes.new("name")
+    mesh = bpy.data.meshes.new(current_file.name.split(".")[0])
     mesh.from_pydata(vertices, [], faces)
+
+    obj = bpy.data.objects.new(current_file.name.split(".")[0], mesh)
 
     # UV Maps
     for uvIndex in range(len(uvs)):
@@ -596,11 +606,88 @@ def createMesh(
             curCol = colors[colorIndex][vertexIndex]
             curColNorm = curCol / colorsNormalize[colorIndex]
             colorLayer.data[vertexIndex].color = [curColNorm, curColNorm, curColNorm, 0]
-
-    obj = bpy.data.objects.new(current_file.name.split(".")[0], mesh)
+    
     obj.data.transform(transformMatrix)
     obj.matrix_world = mathutils.Matrix()
     bpy.context.scene.collection.objects.link(obj)
+    return obj
+
+def customSplitNormals(filepath, obj, transformMatrix, verticesList):
+    #obj.data.customdata_custom_splitnormals_add()
+
+    # Normal custom verts on each axis
+    obj.data.normals_split_custom_set([(0, 0, 0) for l in obj.data.loops])
+    
+    quats = []
+    # Set normal for selected vertices
+    normals = []
+    skipFirst = True
+    ### Make this all not hardcoded ###
+    with open(filepath) as f:
+        reader = csv.reader(f)
+        
+        if skipFirst == True:
+            skipFirst = False
+            next(reader)
+        for line in reader:
+            for columnIndex, column in enumerate(line):
+                if columnIndex == 7:
+                    
+        ## Divide the normals? 
+                    #normals.append(Vector((float(line[columnIndex])/255, float(line[columnIndex+1])/255, float(line[columnIndex+2])/255)).normalized()) #, float(line[columnIndex+3])/255
+                    #print(normals)
+                    
+                    
+                    x = float(line[columnIndex])/255
+                    y = float(line[columnIndex + 1])/255
+                    z = float(line[columnIndex + 2])/255
+                    w = float(line[columnIndex + 3])/255
+                    
+                    #X, Y, Z = quaternion_to_euler_angle_vectorized2(w, x, y, z)
+                    
+                    quats.append(Quaternion((w,x,y,z)))
+                    
+                    #new_verts = [quat1 @ v.co for v in ob.data.vertices]
+                    
+                    #for normIndex, normal in enumerate(quats):  # is dedendant on the number of quaternions appended to list, brain not braining rn for better loop
+        for vIndex, v in enumerate(verticesList):
+            ## It's blender keeps the vertices index in the same order they are in the csv whe you do .from_pydata()
+            
+            #quat = quats[vIndex].conjugated()
+            quat = quats[vIndex].normalized().conjugated()
+            
+            
+            
+
+            #co_final = obj.matrix_world @ v.normal
+            # ! Might not even need euler, matrix from the Quaternion might still be what I'm looking for.
+                        
+            normals.append(transformMatrix @ obj.data.vertices[vIndex].normal @ quat.to_matrix())
+            #normals.append(obj.data.vertices[vIndex].normal @ quat.to_matrix())
+            #normals.append(quat[0])
+            
+                        # per vertex rotate the already existing vector
+                    
+#            if len(normals) >= 36954:   ## FOR TESTING OCTANE ONLY
+#                print(normals)
+#                print(quat)
+#                break
+                
+                
+                
+                #if len(normals) % 1000 == 0:
+                    #print(len(normals))
+    
+    #normals.transform(transformMatrix)
+        # Goddammit i have to vector type everything so the multiplications works?
+    #for i, normal in enumerate(normals):
+        #normals[i] = normals[i] @ transformMatrix
+        
+    obj.data.calc_normals_split()
+    obj.data.normals_split_custom_set_from_vertices(normals) 
+    obj.data.update()
+    
+    print(obj.data.loops[0].normal)
     return obj
 
 
@@ -610,7 +697,25 @@ def readFloatFromArray(arr, index, default = 0.0):
     try:
         return float(arr[index])
     except Exception:
-        return default 
+        return default
+    
+def quaternion_to_euler_angle_vectorized2(w, x, y, z):
+    ysqr = y * y
+
+    t0 = +2.0 * (w * x + y * z)
+    t1 = +1.0 - 2.0 * (x * x + ysqr)
+    X = np.degrees(np.arctan2(t0, t1))
+
+    t2 = +2.0 * (w * y - z * x)
+
+    t2 = np.clip(t2, a_min=-1.0, a_max=1.0)
+    Y = np.degrees(np.arcsin(t2))
+
+    t3 = +2.0 * (w * z + x * y)
+    t4 = +1.0 - 2.0 * (ysqr + z * z)
+    Z = np.degrees(np.arctan2(t3, t4))
+
+    return X, Y, Z
 
 
 def menuItem(self, context):
